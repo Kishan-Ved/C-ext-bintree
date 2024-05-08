@@ -1,4 +1,4 @@
-from bintree import BinTree
+from BST import BST
 
 def int_comp(curr, new):
     if curr > new:
@@ -8,7 +8,7 @@ def int_comp(curr, new):
     else:
         return 0
 
-b = BinTree(1, 666);
+b = BST(1, 666);
 print(b)
 
 print(b.data)
@@ -29,7 +29,7 @@ print(b.search(8))
 
 # print(str(b))
 
-# b.left = BinTree(777)
-# b.right = BinTree(888)
+# b.left = BST(777)
+# b.right = BST(888)
 
 # print(b.listify())

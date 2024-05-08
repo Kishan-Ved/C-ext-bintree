@@ -1,25 +1,25 @@
 //
-//  bintree_module.c
-//  BinTree
+//  BST_module.c
+//  BST
 //
 //  Created by dwd on 12/27/17.
 //  Copyright © 2017 holdendou. All rights reserved.
 //
 
-#include "bintree_module.hpp"
+#include "BST_module.hpp"
 
 /*
  * constructors/destructors
 */
-static void BinTreeDealloc(BinTree* self) {
+static void BSTDealloc(BST* self) {
     if ((PyObject*)self == Py_None) { // base case
         Py_DECREF(Py_None);
         return;
     }
     
     // post-order traversal to dealloc descentents
-    BinTreeDealloc((BinTree*)self->left);
-    BinTreeDealloc((BinTree*)self->right);
+    BSTDealloc((BST*)self->left);
+    BSTDealloc((BST*)self->right);
     
     Py_XDECREF(self->key);
     Py_XDECREF(self->data);
@@ -27,8 +27,8 @@ static void BinTreeDealloc(BinTree* self) {
     
 }
 
-static PyObject* BinTreeAlloc(PyTypeObject *type, PyObject *args, PyObject *kwds) {
-    BinTree * self = (BinTree*)type->tp_alloc(type, 0);
+static PyObject* BSTAlloc(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+    BST * self = (BST*)type->tp_alloc(type, 0);
     
     // set all three as None
     if (self) {
@@ -45,7 +45,7 @@ static PyObject* BinTreeAlloc(PyTypeObject *type, PyObject *args, PyObject *kwds
     return (PyObject*)self;
 }
 
-static int BinTreeInit(BinTree* self, PyObject *args, PyObject *kwds) {
+static int BSTInit(BST* self, PyObject *args, PyObject *kwds) {
     char * kwlist[] = {"key","data", NULL};
     PyObject* key = NULL;
     PyObject* data = NULL;
@@ -72,33 +72,33 @@ static int BinTreeInit(BinTree* self, PyObject *args, PyObject *kwds) {
     
 }
 
-static PyTypeObject BinTreeType = {
+static PyTypeObject BSTType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "bintree.BinTree", // name
-    sizeof(BinTree), // size
+    "BST.BST", // name
+    sizeof(BST), // size
     0, // itemsize
-    (destructor)BinTreeDealloc,
+    (destructor)BSTDealloc,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    "BinTree type object",
+    "BST type object",
     0, 0, 0, 0, 0, 0,
-    BinTreeMethods,
-    BinTreeMembers,
+    BSTMethods,
+    BSTMembers,
     0,0,0,0,0,0,
-    (initproc)BinTreeInit,
+    (initproc)BSTInit,
     0,
-    BinTreeAlloc
+    BSTAlloc
 };
 
 /**
  * methods
 */
-static int inorder(BinTree* self, PyObject* list) {
+static int inorder(BST* self, PyObject* list) {
     if ((PyObject*)self == Py_None) {
         return 0;
     }
 
-    int sts = inorder((BinTree*)self->left, list);
+    int sts = inorder((BST*)self->left, list);
     if (sts < 0) {
         return -1;
     }
@@ -106,13 +106,13 @@ static int inorder(BinTree* self, PyObject* list) {
     if (sts < 0) {
         return -1;
     }
-    sts = inorder((BinTree*)self->right, list);
+    sts = inorder((BST*)self->right, list);
     if (sts < 0) {
         return -1;
     }
     return sts;
 }
-static PyObject* BinTreeListify(BinTree* self) {
+static PyObject* BSTListify(BST* self) {
     PyObject* inorder_list = PyList_New(0);
     if (inorder_list) {
         int sts = inorder(self, inorder_list);
@@ -124,7 +124,7 @@ static PyObject* BinTreeListify(BinTree* self) {
     return inorder_list;
 }
 
-static PyObject* BinTreeSearch(BinTree* self, PyObject* args) {
+static PyObject* BSTSearch(BST* self, PyObject* args) {
     PyObject *key = NULL;
     if (!PyArg_ParseTuple(args, "O", &key)) {
         return NULL;
@@ -137,19 +137,19 @@ static PyObject* BinTreeSearch(BinTree* self, PyObject* args) {
     }
 
     if (self->key > key) { // curr elem is larger; insert left
-        return BinTreeSearch((BinTree*)self->left, args);
+        return BSTSearch((BST*)self->left, args);
     } else if(self->key == key) {
         Py_INCREF(Py_True);
         return Py_True;
     } else {
-        return BinTreeSearch((BinTree*)self->right, args);
+        return BSTSearch((BST*)self->right, args);
     }
     Py_INCREF(self);
     return (PyObject*)self;
 }
 
 
-static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs) {
+static PyObject* BSTInsert(BST* self, PyObject* args, PyObject* kwargs) {
     static char* keywords[] = {"key", "data", "comparator", NULL};
     PyObject *data = NULL, *key = NULL, *comparator = NULL;
     
@@ -158,9 +158,9 @@ static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs) 
     }
 
     if ((PyObject*)self == Py_None) {
-        BinTree * b = (BinTree*)BinTreeAlloc(&BinTreeType, NULL, NULL);
+        BST * b = (BST*)BSTAlloc(&BSTType, NULL, NULL);
         PyObject* argument = Py_BuildValue("(OO)", key, data);
-        BinTreeInit(b, argument, NULL);
+        BSTInit(b, argument, NULL);
         Py_DECREF(argument);
         return (PyObject*)b;
     }    
@@ -169,13 +169,13 @@ static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs) 
         PyObject* tmp;
         if (self->key > key) { // curr key is larger; insert left
             tmp = self->left;
-            self->left = BinTreeInsert((BinTree*)self->left, args, kwargs);
+            self->left = BSTInsert((BST*)self->left, args, kwargs);
             Py_DECREF(tmp);
         } else if(self->key == key) {
             self->data = data;
         } else {
             tmp = self->right;
-            self->right = BinTreeInsert((BinTree*)self->right, args, kwargs);
+            self->right = BSTInsert((BST*)self->right, args, kwargs);
             Py_DECREF(tmp);
         }
         
@@ -203,13 +203,13 @@ static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs) 
         PyObject* tmp;
         if (comp_result == 1) { // curr key is larger; insert left
             tmp = self->left;
-            self->left = BinTreeInsert((BinTree*)self->left, args, kwargs);
+            self->left = BSTInsert((BST*)self->left, args, kwargs);
             Py_DECREF(tmp);
         } else if(comp_result == 0) {
             self->data = data;
         } else {
             tmp = self->right;
-            self->right = BinTreeInsert((BinTree*)self->right, args, kwargs);
+            self->right = BSTInsert((BST*)self->right, args, kwargs);
             Py_DECREF(tmp);
         }
         
@@ -220,7 +220,7 @@ static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs) 
 
 // The below insert() works completely without keywords
 
-// static PyObject* BinTreeInsert(BinTree* self, PyObject* args) {
+// static PyObject* BSTInsert(BST* self, PyObject* args) {
 //     PyObject *key, *elem, *comparator = NULL;
 //     if (!PyArg_ParseTuple(args, "OOO", &key, &elem, &comparator)) {
 //         return NULL;
@@ -231,9 +231,9 @@ static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs) 
 //         return NULL;
 //     }
 //     if (self == Py_None) {
-//         BinTree * b = BinTreeAlloc(&BinTreeType, NULL, NULL);
+//         BST * b = BSTAlloc(&BSTType, NULL, NULL);
 //         PyObject* argument = Py_BuildValue("(OO)", key, elem);
-//         BinTreeInit(b, argument, NULL);
+//         BSTInit(b, argument, NULL);
 //         Py_DECREF(argument);
 //         return b;
 //     }
@@ -249,11 +249,11 @@ static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs) 
 //     PyObject* tmp;
 //     if (comp_result == 1) { // curr elem is larger; insert left
 //         tmp = self->left;
-//         self->left = BinTreeInsert(self->left, args);
+//         self->left = BSTInsert(self->left, args);
 //         Py_DECREF(tmp);
 //     } else {
 //         tmp = self->right;
-//         self->right = BinTreeInsert(self->right, args);
+//         self->right = BSTInsert(self->right, args);
 //         Py_DECREF(tmp);
 //     }
 //     Py_INCREF(self);
@@ -261,25 +261,25 @@ static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs) 
 // }
 
 
-static PyModuleDef bintreemodule = {
+static PyModuleDef BSTmodule = {
     PyModuleDef_HEAD_INIT,
-    "bintree",
-    "c extension of bintree",
+    "BST",
+    "c extension of BST",
     -1,
     NULL, NULL, NULL, NULL, NULL
 };
 
 
-PyMODINIT_FUNC PyInit_bintree(void) {
-    if (PyType_Ready(&BinTreeType) < 0) {
+PyMODINIT_FUNC PyInit_BST(void) {
+    if (PyType_Ready(&BSTType) < 0) {
         return NULL;
     }
-    PyObject* m = PyModule_Create(&bintreemodule);
+    PyObject* m = PyModule_Create(&BSTmodule);
     if (!m) {
         return NULL;
     }
-    Py_INCREF(&BinTreeType);
-    PyModule_AddObject(m, "BinTree", (PyObject*)&BinTreeType);
+    Py_INCREF(&BSTType);
+    PyModule_AddObject(m, "BST", (PyObject*)&BSTType);
     return m;
 }
 
