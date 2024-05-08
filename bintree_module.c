@@ -143,7 +143,7 @@ static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs) 
     
     if (comparator == NULL) {
         PyObject* tmp;
-        if (self->key >= key) { // curr key is larger; insert left
+        if (self->key > key) { // curr key is larger; insert left
             tmp = self->left;
             self->left = BinTreeInsert(self->left, args, kwargs);
             Py_DECREF(tmp);
