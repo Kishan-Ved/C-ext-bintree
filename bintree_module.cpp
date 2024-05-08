@@ -6,7 +6,7 @@
 //  Copyright © 2017 holdendou. All rights reserved.
 //
 
-#include "bintree_module.h"
+#include "bintree_module.hpp"
 
 /*
  * constructors/destructors
@@ -46,7 +46,7 @@ static PyObject* BinTreeAlloc(PyTypeObject *type, PyObject *args, PyObject *kwds
 }
 
 static int BinTreeInit(BinTree* self, PyObject *args, PyObject *kwds) {
-    const char * kwlist[] = {"key","data", NULL};
+    char * kwlist[] = {"key","data", NULL};
     PyObject* key = NULL;
     PyObject* data = NULL;
     
@@ -94,11 +94,11 @@ static PyTypeObject BinTreeType = {
  * methods
 */
 static int inorder(BinTree* self, PyObject* list) {
-    if (self == Py_None) {
+    if ((PyObject*)self == Py_None) {
         return 0;
     }
 
-    int sts = inorder(self->left, list);
+    int sts = inorder((BinTree*)self->left, list);
     if (sts < 0) {
         return -1;
     }
@@ -106,7 +106,7 @@ static int inorder(BinTree* self, PyObject* list) {
     if (sts < 0) {
         return -1;
     }
-    sts = inorder(self->right, list);
+    sts = inorder((BinTree*)self->right, list);
     if (sts < 0) {
         return -1;
     }
@@ -131,21 +131,21 @@ static PyObject* BinTreeSearch(BinTree* self, PyObject* args) {
     }
 
 
-    if (self == Py_None) {
+    if ((PyObject*)self == Py_None) {
         Py_INCREF(Py_False);
         return Py_False;
     }
 
     if (self->key > key) { // curr elem is larger; insert left
-        return BinTreeSearch(self->left, args);
+        return BinTreeSearch((BinTree*)self->left, args);
     } else if(self->key == key) {
         Py_INCREF(Py_True);
         return Py_True;
     } else {
-        return BinTreeSearch(self->right, args);
+        return BinTreeSearch((BinTree*)self->right, args);
     }
     Py_INCREF(self);
-    return self;
+    return (PyObject*)self;
 }
 
 
@@ -157,30 +157,30 @@ static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs) 
         return NULL;
     }
 
-    if (self == Py_None) {
-        BinTree * b = BinTreeAlloc(&BinTreeType, NULL, NULL);
+    if ((PyObject*)self == Py_None) {
+        BinTree * b = (BinTree*)BinTreeAlloc(&BinTreeType, NULL, NULL);
         PyObject* argument = Py_BuildValue("(OO)", key, data);
         BinTreeInit(b, argument, NULL);
         Py_DECREF(argument);
-        return b;
+        return (PyObject*)b;
     }    
     
     if (comparator == NULL) {
         PyObject* tmp;
         if (self->key > key) { // curr key is larger; insert left
             tmp = self->left;
-            self->left = BinTreeInsert(self->left, args, kwargs);
+            self->left = BinTreeInsert((BinTree*)self->left, args, kwargs);
             Py_DECREF(tmp);
         } else if(self->key == key) {
             self->data = data;
         } else {
             tmp = self->right;
-            self->right = BinTreeInsert(self->right, args, kwargs);
+            self->right = BinTreeInsert((BinTree*)self->right, args, kwargs);
             Py_DECREF(tmp);
         }
         
         Py_INCREF(self);
-        return self;
+        return (PyObject*)self;
     } else {
         // Check if the provided comparator is callable
         if (!PyCallable_Check(comparator)) {
@@ -203,18 +203,18 @@ static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs) 
         PyObject* tmp;
         if (comp_result == 1) { // curr key is larger; insert left
             tmp = self->left;
-            self->left = BinTreeInsert(self->left, args, kwargs);
+            self->left = BinTreeInsert((BinTree*)self->left, args, kwargs);
             Py_DECREF(tmp);
         } else if(comp_result == 0) {
             self->data = data;
         } else {
             tmp = self->right;
-            self->right = BinTreeInsert(self->right, args, kwargs);
+            self->right = BinTreeInsert((BinTree*)self->right, args, kwargs);
             Py_DECREF(tmp);
         }
         
         Py_INCREF(self);
-        return self;
+        return (PyObject*)self;
     }
 }
 
