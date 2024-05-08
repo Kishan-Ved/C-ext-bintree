@@ -146,7 +146,7 @@ static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs) 
         return b;
     }
     
-    PyObject* arguments = Py_BuildValue("OO", self->key, data);
+    PyObject* arguments = Py_BuildValue("OO", self->key, key);
     PyObject* comp = PyObject_CallObject(comparator, arguments);
     Py_DECREF(arguments);
     
@@ -163,6 +163,8 @@ static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs) 
         tmp = self->left;
         self->left = BinTreeInsert(self->left, args, kwargs);
         Py_DECREF(tmp);
+    } else if(comp_result == 0) {
+        self->data = data;
     } else {
         tmp = self->right;
         self->right = BinTreeInsert(self->right, args, kwargs);

@@ -15,10 +15,11 @@ print(b.data)
 print(b.key)
 
 # Keywords can now be used. But all must be keywords or none
-b = b.insert(data=777, comparator=int_comp, key=2)
+b.insert(data=777, comparator=int_comp, key=2)
 # b = b.insert(2, 777, int_comp)
-b = b.insert(3, 888, int_comp)
-b = b.insert(4, 555, int_comp)
+b.insert(3, 888, int_comp)
+b.insert(4, 555, int_comp)
+b.insert(3, 333, int_comp)
 print(b.left)
 print(b.right)
 
