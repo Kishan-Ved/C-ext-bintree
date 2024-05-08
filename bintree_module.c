@@ -124,6 +124,30 @@ static PyObject* BinTreeListify(BinTree* self) {
     return inorder_list;
 }
 
+static PyObject* BinTreeSearch(BinTree* self, PyObject* args) {
+    PyObject *key = NULL;
+    if (!PyArg_ParseTuple(args, "O", &key)) {
+        return NULL;
+    }
+
+
+    if (self == Py_None) {
+        Py_INCREF(Py_False);
+        return Py_False;
+    }
+
+    if (self->key > key) { // curr elem is larger; insert left
+        return BinTreeSearch(self->left, args);
+    } else if(self->key == key) {
+        Py_INCREF(Py_True);
+        return Py_True;
+    } else {
+        return BinTreeSearch(self->right, args);
+    }
+    Py_INCREF(self);
+    return self;
+}
+
 
 static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs) {
     static char* keywords[] = {"key", "data", "comparator", NULL};

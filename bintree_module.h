@@ -31,6 +31,7 @@ static PyMemberDef BinTreeMembers[] = {
 
 static PyObject* BinTreeListify(BinTree* self);
 static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs);
+static PyObject* BinTreeSearch(BinTree* self, PyObject* args);
 
 static PyMethodDef BinTreeMethods[] = {
     {
@@ -45,12 +46,12 @@ static PyMethodDef BinTreeMethods[] = {
         METH_VARARGS | METH_KEYWORDS,
         "insert an element"
     },
-    // {
-    //     "find",
-    //     (PyCFunction)BinTreeFind,
-    //     METH_VARARGS,
-    //     "find an element"
-    // },
+    {
+        "search",
+        (PyCFunction)BinTreeSearch,
+        METH_VARARGS,
+        "search for an element in the binary tree"
+    },
     {NULL}
 };
 
