@@ -129,50 +129,69 @@ static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs) 
     static char* keywords[] = {"key", "data", "comparator", NULL};
     PyObject *data = NULL, *key = NULL, *comparator = NULL;
     
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OOO", keywords, &key, &data, &comparator)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|O", keywords, &key, &data, &comparator)) {
         return NULL;
     }
-    
-    if (!PyCallable_Check(comparator)) {
-        PyErr_SetString(PyExc_ValueError, "comparator should be callable");
-        return NULL;
-    }
-    
+
     if (self == Py_None) {
         BinTree * b = BinTreeAlloc(&BinTreeType, NULL, NULL);
         PyObject* argument = Py_BuildValue("(OO)", key, data);
         BinTreeInit(b, argument, NULL);
         Py_DECREF(argument);
         return b;
-    }
+    }    
     
-    PyObject* arguments = Py_BuildValue("OO", self->key, key);
-    PyObject* comp = PyObject_CallObject(comparator, arguments);
-    Py_DECREF(arguments);
-    
-    if (!PyLong_Check(comp)) {
-        PyErr_SetString(PyExc_TypeError, "bad return type from comparator");
-        return NULL;
-    }
-    
-    long long comp_result = PyLong_AsLongLong(comp);
-    Py_DECREF(comp);
-    
-    PyObject* tmp;
-    if (comp_result == 1) { // curr key is larger; insert left
-        tmp = self->left;
-        self->left = BinTreeInsert(self->left, args, kwargs);
-        Py_DECREF(tmp);
-    } else if(comp_result == 0) {
-        self->data = data;
+    if (comparator == NULL) {
+        PyObject* tmp;
+        if (self->key >= key) { // curr key is larger; insert left
+            tmp = self->left;
+            self->left = BinTreeInsert(self->left, args, kwargs);
+            Py_DECREF(tmp);
+        } else if(self->key == key) {
+            self->data = data;
+        } else {
+            tmp = self->right;
+            self->right = BinTreeInsert(self->right, args, kwargs);
+            Py_DECREF(tmp);
+        }
+        
+        Py_INCREF(self);
+        return self;
     } else {
-        tmp = self->right;
-        self->right = BinTreeInsert(self->right, args, kwargs);
-        Py_DECREF(tmp);
+        // Check if the provided comparator is callable
+        if (!PyCallable_Check(comparator)) {
+            PyErr_SetString(PyExc_ValueError, "comparator should be callable");
+            return NULL;
+        }
+
+        PyObject* arguments = Py_BuildValue("OO", self->key, key);
+        PyObject* comp = PyObject_CallObject(comparator, arguments);
+        Py_DECREF(arguments);
+        
+        if (!PyLong_Check(comp)) {
+            PyErr_SetString(PyExc_TypeError, "bad return type from comparator");
+            return NULL;
+        }
+        
+        long long comp_result = PyLong_AsLongLong(comp);
+        Py_DECREF(comp);
+        
+        PyObject* tmp;
+        if (comp_result == 1) { // curr key is larger; insert left
+            tmp = self->left;
+            self->left = BinTreeInsert(self->left, args, kwargs);
+            Py_DECREF(tmp);
+        } else if(comp_result == 0) {
+            self->data = data;
+        } else {
+            tmp = self->right;
+            self->right = BinTreeInsert(self->right, args, kwargs);
+            Py_DECREF(tmp);
+        }
+        
+        Py_INCREF(self);
+        return self;
     }
-    
-    Py_INCREF(self);
-    return self;
 }
 
 // The below insert() works completely without keywords
