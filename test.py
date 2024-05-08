@@ -8,16 +8,21 @@ def int_comp(curr, new):
     else:
         return 0
 
-b = BinTree(666);
+b = BinTree(1, 666);
 print(b)
 
 print(b.data)
+print(b.key)
+
+# Keywords can now be used. But all must be keywords or none
+b = b.insert(data=777, comparator=int_comp, key=2)
+# b = b.insert(2, 777, int_comp)
+b = b.insert(3, 888, int_comp)
+b = b.insert(4, 555, int_comp)
 print(b.left)
 print(b.right)
 
-b = b.insert(777, int_comp)
-b = b.insert(888, int_comp)
-b = b.insert(555, int_comp)
+# print(str(b))
 
 # b.left = BinTree(777)
 # b.right = BinTree(888)

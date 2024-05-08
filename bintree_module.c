@@ -21,6 +21,7 @@ static void BinTreeDealloc(BinTree* self) {
     BinTreeDealloc((BinTree*)self->left);
     BinTreeDealloc((BinTree*)self->right);
     
+    Py_XDECREF(self->key);
     Py_XDECREF(self->data);
     Py_TYPE(self)->tp_free((PyObject*)self);
     
@@ -34,6 +35,8 @@ static PyObject* BinTreeAlloc(PyTypeObject *type, PyObject *args, PyObject *kwds
         Py_INCREF(Py_None);
         Py_INCREF(Py_None);
         Py_INCREF(Py_None);
+        Py_INCREF(Py_None);
+        self->key = Py_None;
         self->data = Py_None;
         self->left = Py_None;
         self->right = Py_None;
@@ -43,11 +46,19 @@ static PyObject* BinTreeAlloc(PyTypeObject *type, PyObject *args, PyObject *kwds
 }
 
 static int BinTreeInit(BinTree* self, PyObject *args, PyObject *kwds) {
-    const char * kwlist[] = {"data", NULL};
+    const char * kwlist[] = {"key","data", NULL};
+    PyObject* key = NULL;
     PyObject* data = NULL;
     
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O", kwlist, &data)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO", kwlist, &key, &data)) {
         return -1;
+    }
+
+    if (key) {
+        Py_INCREF(key);        
+        PyObject* tmp = self->key;
+        self->key = key;
+        Py_XDECREF(tmp);
     }
 
     if (data) {
@@ -113,44 +124,97 @@ static PyObject* BinTreeListify(BinTree* self) {
     return inorder_list;
 }
 
-static PyObject* BinTreeInsert(BinTree* self, PyObject* args) {
-    PyObject *elem, *comparator = NULL;
-    if (!PyArg_ParseTuple(args, "OO", &elem, &comparator)) {
+
+static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs) {
+    static char* keywords[] = {"key", "data", "comparator", NULL};
+    PyObject *data = NULL, *key = NULL, *comparator = NULL;
+    
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OOO", keywords, &key, &data, &comparator)) {
         return NULL;
     }
+    
     if (!PyCallable_Check(comparator)) {
         PyErr_SetString(PyExc_ValueError, "comparator should be callable");
         return NULL;
     }
+    
     if (self == Py_None) {
         BinTree * b = BinTreeAlloc(&BinTreeType, NULL, NULL);
-        PyObject* argument = Py_BuildValue("(O)", elem);
+        PyObject* argument = Py_BuildValue("(OO)", key, data);
         BinTreeInit(b, argument, NULL);
         Py_DECREF(argument);
         return b;
     }
-    PyObject* arguments = Py_BuildValue("OO", self->data, elem);
+    
+    PyObject* arguments = Py_BuildValue("OO", self->key, data);
     PyObject* comp = PyObject_CallObject(comparator, arguments);
     Py_DECREF(arguments);
+    
     if (!PyLong_Check(comp)) {
         PyErr_SetString(PyExc_TypeError, "bad return type from comparator");
         return NULL;
     }
+    
     long long comp_result = PyLong_AsLongLong(comp);
     Py_DECREF(comp);
+    
     PyObject* tmp;
-    if (comp_result == 1) { // curr elem is larger; insert left
+    if (comp_result == 1) { // curr key is larger; insert left
         tmp = self->left;
-        self->left = BinTreeInsert(self->left, args);
+        self->left = BinTreeInsert(self->left, args, kwargs);
         Py_DECREF(tmp);
     } else {
         tmp = self->right;
-        self->right = BinTreeInsert(self->right, args);
+        self->right = BinTreeInsert(self->right, args, kwargs);
         Py_DECREF(tmp);
     }
+    
     Py_INCREF(self);
     return self;
 }
+
+// The below insert() works completely without keywords
+
+// static PyObject* BinTreeInsert(BinTree* self, PyObject* args) {
+//     PyObject *key, *elem, *comparator = NULL;
+//     if (!PyArg_ParseTuple(args, "OOO", &key, &elem, &comparator)) {
+//         return NULL;
+//     }
+    
+//     if (!PyCallable_Check(comparator)) {
+//         PyErr_SetString(PyExc_ValueError, "comparator should be callable");
+//         return NULL;
+//     }
+//     if (self == Py_None) {
+//         BinTree * b = BinTreeAlloc(&BinTreeType, NULL, NULL);
+//         PyObject* argument = Py_BuildValue("(OO)", key, elem);
+//         BinTreeInit(b, argument, NULL);
+//         Py_DECREF(argument);
+//         return b;
+//     }
+//     PyObject* arguments = Py_BuildValue("OO", self->key, elem);
+//     PyObject* comp = PyObject_CallObject(comparator, arguments);
+//     Py_DECREF(arguments);
+//     if (!PyLong_Check(comp)) {
+//         PyErr_SetString(PyExc_TypeError, "bad return type from comparator");
+//         return NULL;
+//     }
+//     long long comp_result = PyLong_AsLongLong(comp);
+//     Py_DECREF(comp);
+//     PyObject* tmp;
+//     if (comp_result == 1) { // curr elem is larger; insert left
+//         tmp = self->left;
+//         self->left = BinTreeInsert(self->left, args);
+//         Py_DECREF(tmp);
+//     } else {
+//         tmp = self->right;
+//         self->right = BinTreeInsert(self->right, args);
+//         Py_DECREF(tmp);
+//     }
+//     Py_INCREF(self);
+//     return self;
+// }
+
 
 static PyModuleDef bintreemodule = {
     PyModuleDef_HEAD_INIT,
@@ -160,8 +224,8 @@ static PyModuleDef bintreemodule = {
     NULL, NULL, NULL, NULL, NULL
 };
 
-PyMODINIT_FUNC
-PyInit_bintree(void) {
+
+PyMODINIT_FUNC PyInit_bintree(void) {
     if (PyType_Ready(&BinTreeType) < 0) {
         return NULL;
     }

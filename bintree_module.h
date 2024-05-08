@@ -15,12 +15,14 @@
 
 typedef struct {
     PyObject_HEAD
+    PyObject* key;
     PyObject* data;
     PyObject* left;
     PyObject* right;
 } BinTree;
 
 static PyMemberDef BinTreeMembers[] = {
+    {"key", T_OBJECT_EX, offsetof(BinTree, key), 0, "key of bintree node"},
     {"data", T_OBJECT_EX, offsetof(BinTree, data), 0, "data of a bintree node"},
     {"left", T_OBJECT_EX, offsetof(BinTree, left), 0, "left child"},
     {"right", T_OBJECT_EX, offsetof(BinTree, right), 0, "right child"},
@@ -28,7 +30,7 @@ static PyMemberDef BinTreeMembers[] = {
 };
 
 static PyObject* BinTreeListify(BinTree* self);
-static PyObject* BinTreeInsert(BinTree* self, PyObject* args);
+static PyObject* BinTreeInsert(BinTree* self, PyObject* args, PyObject* kwargs);
 
 static PyMethodDef BinTreeMethods[] = {
     {
@@ -40,9 +42,15 @@ static PyMethodDef BinTreeMethods[] = {
     {
         "insert",
         (PyCFunction)BinTreeInsert,
-        METH_VARARGS,
+        METH_VARARGS | METH_KEYWORDS,
         "insert an element"
     },
+    // {
+    //     "find",
+    //     (PyCFunction)BinTreeFind,
+    //     METH_VARARGS,
+    //     "find an element"
+    // },
     {NULL}
 };
 
